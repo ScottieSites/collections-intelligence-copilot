@@ -2,7 +2,7 @@ import React from 'react'
 import {
   PhoneCall, ShieldCheck, FileText, LayoutDashboard,
   TrendingDown, CreditCard, Calculator, StickyNote,
-  BrainCircuit, RotateCcw, ChevronRight,
+  BrainCircuit, RotateCcw, ChevronRight, Database,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
@@ -146,8 +146,24 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Test Database */}
+      <div className="px-3 py-3 border-t border-white/10">
+        <button
+          onClick={() => dispatch({ type: 'SET_STEP', payload: 'test-db' })}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+            state.step === 'test-db'
+              ? 'bg-indigo-700 text-white'
+              : 'text-slate-400 hover:bg-white/10 hover:text-white'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          <span className="flex-1 font-medium">Test Database</span>
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500 text-white">850+</span>
+        </button>
+      </div>
+
       {/* Reset / New Call */}
-      <div className="px-3 py-4 border-t border-white/10">
+      <div className="px-3 py-3 border-t border-white/10">
         <button
           onClick={() => dispatch({ type: 'RESET' })}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:bg-white/10 hover:text-white text-sm transition-colors"
