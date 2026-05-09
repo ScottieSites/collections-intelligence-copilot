@@ -1,5 +1,5 @@
 import React from 'react'
-import { Clock, User, Hash } from 'lucide-react'
+import { Clock, User, Hash, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
 function useCallTimer(startTime) {
@@ -20,8 +20,8 @@ function useCallTimer(startTime) {
 }
 
 export default function Header() {
-  const { state } = useApp()
-  const { customer, callId, callStartTime } = state
+  const { state, dispatch } = useApp()
+  const { customer, callId, callStartTime, linkedAccounts } = state
   const elapsed = useCallTimer(callStartTime)
 
   if (!customer) return null
@@ -39,9 +39,32 @@ export default function Header() {
         <span className={riskClass}>{customer.riskLabel}</span>
       </div>
 
-      <div className="flex items-center gap-1.5 text-slate-500 text-sm">
-        <Hash className="w-3.5 h-3.5" />
-        <span className="font-mono">{customer.id}</span>
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 text-slate-500 text-sm">
+          <Hash className="w-3.5 h-3.5" />
+          <span className="font-mono">{customer.id}</span>
+        </div>
+
+        {linkedAccounts?.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-slate-400 text-xs">+</span>
+            {linkedAccounts.map(acc => (
+              <div
+                key={acc.id}
+                className="flex items-center gap-1 pl-2 pr-1 py-0.5 bg-indigo-50 border border-indigo-200 rounded-lg"
+              >
+                <span className="font-mono text-xs text-indigo-700 font-semibold">{acc.id}</span>
+                <button
+                  onClick={() => dispatch({ type: 'REMOVE_LINKED_ACCOUNT', payload: acc.id })}
+                  className="text-indigo-400 hover:text-indigo-700 transition-colors ml-0.5 p-0.5 rounded hover:bg-indigo-100"
+                  title="Remove from call"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 text-slate-500 text-sm ml-auto">

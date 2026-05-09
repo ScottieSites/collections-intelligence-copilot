@@ -2,7 +2,7 @@ import React from 'react'
 import {
   PhoneCall, ShieldCheck, FileText, LayoutDashboard,
   TrendingDown, CreditCard, Calculator, StickyNote,
-  BrainCircuit, RotateCcw, ChevronRight, Database,
+  BrainCircuit, RotateCcw, ChevronRight, Database, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
@@ -13,13 +13,13 @@ const STEPS = [
   { key: 'dashboard',     label: 'Account Dashboard', icon: LayoutDashboard, minStep: 3 },
 ]
 
-const TABS = [
-  { key: 'overview',          label: 'Overview',            icon: LayoutDashboard  },
-  { key: 'delinquency',       label: 'Delinquency History', icon: TrendingDown     },
-  { key: 'credit',            label: 'Credit History',      icon: CreditCard       },
-  { key: 'calculator',        label: 'Financial Calculator',icon: Calculator       },
-  { key: 'notes',             label: 'Notes',               icon: StickyNote       },
-  { key: 'ai-strategy',       label: 'AI Strategy',         icon: BrainCircuit     },
+const BASE_TABS = [
+  { key: 'overview',    label: 'Overview',            icon: LayoutDashboard  },
+  { key: 'delinquency', label: 'Delinquency History', icon: TrendingDown     },
+  { key: 'credit',      label: 'Credit History',      icon: CreditCard       },
+  { key: 'calculator',  label: 'Financial Calculator',icon: Calculator       },
+  { key: 'notes',       label: 'Notes',               icon: StickyNote       },
+  { key: 'ai-strategy', label: 'AI Strategy',         icon: BrainCircuit, badge: 'AI' },
 ]
 
 function stepIndex(step) {
@@ -30,6 +30,18 @@ function stepIndex(step) {
 export default function Sidebar() {
   const { state, dispatch } = useApp()
   const current = stepIndex(state.step)
+  const linkedCount = state.linkedAccounts?.length ?? 0
+
+  const TABS = [
+    ...BASE_TABS,
+    ...(state.customer?.customerId ? [{
+      key: 'relationships',
+      label: 'Relationships',
+      icon: Users,
+      badge: linkedCount > 0 ? String(linkedCount) : null,
+      badgeColor: 'indigo',
+    }] : []),
+  ]
 
   function navigate(stepKey) {
     dispatch({ type: 'SET_STEP', payload: stepKey })
@@ -119,6 +131,8 @@ export default function Sidebar() {
                   {TABS.map((tab) => {
                     const TabIcon = tab.icon
                     const tabActive = isOnDashboard && state.activeTab === tab.key
+                    const badgeBg =
+                      tab.badgeColor === 'indigo' ? 'bg-indigo-500' : 'bg-purple-600'
                     return (
                       <button
                         key={tab.key}
@@ -131,9 +145,9 @@ export default function Sidebar() {
                       >
                         <TabIcon className="w-3.5 h-3.5 flex-shrink-0" />
                         <span>{tab.label}</span>
-                        {tab.key === 'ai-strategy' && (
-                          <span className="ml-auto px-1 py-0.5 rounded text-[9px] font-bold bg-purple-600 text-white">
-                            AI
+                        {tab.badge && (
+                          <span className={`ml-auto px-1 py-0.5 rounded text-[9px] font-bold ${badgeBg} text-white`}>
+                            {tab.badge}
                           </span>
                         )}
                       </button>

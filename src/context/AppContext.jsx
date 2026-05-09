@@ -30,6 +30,7 @@ const buildInitialState = () => ({
   step: 'call-script',           // call-script | verification | disclosure | dashboard
   accountNumber: '',
   customer: null,
+  linkedAccounts: [],
   agentId: 'AGT-001',
   agentName: 'Agent Smith',
   callId: null,
@@ -51,10 +52,23 @@ function reducer(state, action) {
     case 'SET_ACCOUNT_NUMBER':
       return { ...state, accountNumber: action.payload }
 
+    case 'ADD_LINKED_ACCOUNT': {
+      const already = state.linkedAccounts.some(a => a.id === action.payload.id)
+      if (already) return state
+      return { ...state, linkedAccounts: [...state.linkedAccounts, action.payload] }
+    }
+
+    case 'REMOVE_LINKED_ACCOUNT':
+      return {
+        ...state,
+        linkedAccounts: state.linkedAccounts.filter(a => a.id !== action.payload),
+      }
+
     case 'SELECT_CUSTOMER':
       return {
         ...state,
         customer: action.payload,
+        linkedAccounts: [],
         accountNumber: action.payload.id,
         callId: `CALL-${Date.now()}`,
         callStartTime: new Date().toISOString(),
