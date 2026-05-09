@@ -28,7 +28,9 @@ function DelinquencyBadge({ n }) {
 
 export default function Overview() {
   const { state, dispatch } = useApp()
-  const c = state.customer
+  const c = state.activeViewId
+    ? (state.linkedAccounts.find(a => a.id === state.activeViewId) ?? state.customer)
+    : state.customer
   if (!c) return null
 
   const utilization = ((c.balance / c.creditLimit) * 100).toFixed(1)

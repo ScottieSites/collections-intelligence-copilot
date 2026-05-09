@@ -31,6 +31,7 @@ const buildInitialState = () => ({
   accountNumber: '',
   customer: null,
   linkedAccounts: [],
+  activeViewId: null,   // null = primary customer; account id = viewing a linked account
   agentId: 'AGT-001',
   agentName: 'Agent Smith',
   callId: null,
@@ -62,13 +63,18 @@ function reducer(state, action) {
       return {
         ...state,
         linkedAccounts: state.linkedAccounts.filter(a => a.id !== action.payload),
+        activeViewId: state.activeViewId === action.payload ? null : state.activeViewId,
       }
+
+    case 'SET_ACTIVE_VIEW':
+      return { ...state, activeViewId: action.payload }
 
     case 'SELECT_CUSTOMER':
       return {
         ...state,
         customer: action.payload,
         linkedAccounts: [],
+        activeViewId: null,
         accountNumber: action.payload.id,
         callId: `CALL-${Date.now()}`,
         callStartTime: new Date().toISOString(),
