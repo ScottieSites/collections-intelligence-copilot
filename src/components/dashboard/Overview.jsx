@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   User, Phone, Mail, MapPin, DollarSign,
   CalendarClock, AlertTriangle, TrendingDown, ChevronRight,
+  Pencil, Check, X as XIcon,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
+import { getAccountsByCustomer } from '../../data/db/index'
 
 function fmt(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -33,6 +35,39 @@ export default function Overview() {
     : state.customer
   if (!c) return null
 
+  const [editMode, setEditMode]     = useState(false)
+  const [showWarning, setShowWarning] = useState(false)
+  const [editData, setEditData]     = useState(null)
+
+  // Check every account under this customer for any delinquency
+  const allCustomerAccounts = c.customerId ? getAccountsByCustomer(c.customerId) : [c]
+  const hasAnyDelinquent    = allCustomerAccounts.some(a => a.paymentsLate > 0)
+
+  function handleEditClick() {
+    if (hasAnyDelinquent) {
+      setEditData({ phones: { ...c.phones }, email: c.email || '' })
+      setShowWarning(false)
+      setEditMode(true)
+    } else {
+      setShowWarning(true)
+      setEditMode(false)
+    }
+  }
+
+  function handleSave() {
+    dispatch({ type: 'UPDATE_CONTACT', payload: { accountId: c.id, phones: editData.phones, email: editData.email } })
+    setEditMode(false)
+  }
+
+  function handleCancel() {
+    setEditMode(false)
+    setShowWarning(false)
+  }
+
+  function setPhone(key, val) {
+    setEditData(prev => ({ ...prev, phones: { ...prev.phones, [key]: val } }))
+  }
+
   const utilization = ((c.balance / c.creditLimit) * 100).toFixed(1)
 
   function goDelinquency() {
@@ -45,10 +80,38 @@ export default function Overview() {
 
         {/* Panel 1: Customer Details */}
         <div className="card lg:col-span-1 space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <User className="w-4 h-4 text-slate-400" />
-            <h2 className="section-label">Customer Details</h2>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-slate-400" />
+              <h2 className="section-label">Customer Details</h2>
+            </div>
+            {!editMode && (
+              <button
+                onClick={handleEditClick}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                title="Edit contact information"
+              >
+                <Pencil className="w-3 h-3" />
+                Edit
+              </button>
+            )}
           </div>
+
+          {/* Transfer warning */}
+          {showWarning && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-amber-800 mb-0.5">Transfer Required</p>
+                <p className="text-xs text-amber-700">
+                  Demographic updates are currently prohibited on up to date accounts. Please transfer the call to the appropriate department.
+                </p>
+              </div>
+              <button onClick={handleCancel} className="text-amber-500 hover:text-amber-700">
+                <XIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           <div>
             <p className="text-xl font-bold text-slate-900">{c.name}</p>
@@ -58,28 +121,76 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            {[
-              { label: 'Home', val: c.phones.home },
-              { label: 'Mobile', val: c.phones.mobile },
-              { label: 'Work', val: c.phones.work },
-            ].map(({ label, val }) => val ? (
-              <div key={label} className="flex items-center gap-2 text-sm">
-                <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                <span className="text-slate-500 w-12 text-xs">{label}</span>
-                <span className="text-slate-700 font-medium">{val}</span>
-                {c.preferredContact === label && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded font-semibold">Preferred</span>
-                )}
+          {/* Phone + email — display or edit */}
+          {editMode ? (
+            <div className="space-y-3">
+              {[
+                { label: 'Home',   key: 'home' },
+                { label: 'Mobile', key: 'mobile' },
+                { label: 'Work',   key: 'work' },
+              ].map(({ label, key }) => (
+                <div key={key}>
+                  <label className="text-xs text-slate-500 mb-1 block">{label} Phone</label>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                    <input
+                      type="tel"
+                      value={editData.phones[key] || ''}
+                      onChange={e => setPhone(key, e.target.value)}
+                      placeholder={`${label} phone`}
+                      className="input-field flex-1 text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Email</label>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <input
+                    type="email"
+                    value={editData.email}
+                    onChange={e => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Email address"
+                    className="input-field flex-1 text-sm"
+                  />
+                </div>
               </div>
-            ) : null)}
-          </div>
-
-          {c.email && (
-            <div className="flex items-center gap-2 text-sm">
-              <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="text-slate-700">{c.email}</span>
+              <div className="flex gap-2 pt-1">
+                <button onClick={handleSave} className="btn-success flex-1 justify-center py-1.5 text-xs">
+                  <Check className="w-3.5 h-3.5" /> Save Changes
+                </button>
+                <button onClick={handleCancel} className="btn-secondary px-3 py-1.5 text-xs">
+                  Cancel
+                </button>
+              </div>
             </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {[
+                  { label: 'Home',   val: c.phones.home },
+                  { label: 'Mobile', val: c.phones.mobile },
+                  { label: 'Work',   val: c.phones.work },
+                ].map(({ label, val }) => val ? (
+                  <div key={label} className="flex items-center gap-2 text-sm">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                    <span className="text-slate-500 w-12 text-xs">{label}</span>
+                    <span className="text-slate-700 font-medium">{val}</span>
+                    {c.preferredContact === label && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded font-semibold">Preferred</span>
+                    )}
+                  </div>
+                ) : null)}
+              </div>
+
+              {c.email && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-700">{c.email}</span>
+                </div>
+              )}
+            </>
           )}
         </div>
 

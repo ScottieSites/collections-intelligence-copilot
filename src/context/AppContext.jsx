@@ -69,6 +69,18 @@ function reducer(state, action) {
     case 'SET_ACTIVE_VIEW':
       return { ...state, activeViewId: action.payload }
 
+    case 'UPDATE_CONTACT': {
+      const { accountId, phones, email } = action.payload
+      const patch = (a) => a.id === accountId
+        ? { ...a, phones: { ...a.phones, ...phones }, email }
+        : a
+      return {
+        ...state,
+        customer: patch(state.customer),
+        linkedAccounts: state.linkedAccounts.map(patch),
+      }
+    }
+
     case 'SELECT_CUSTOMER':
       return {
         ...state,
