@@ -126,9 +126,10 @@ export default async function handler(req, res) {
 
     const data  = await response.json()
     const raw   = data.content?.[0]?.text ?? ''
-    // Strip markdown code fences Claude sometimes adds despite being told not to
-    const text  = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-    const analysis = JSON.parse(text)
+    // Extract the JSON object regardless of any surrounding markdown or text
+    const match = raw.match(/\{[\s\S]*\}/)
+    if (!match) return res.status(500).json({ error: 'Claude returned no JSON object', raw })
+    const analysis = JSON.parse(match[0])
     return res.status(200).json(analysis)
 
   } catch (err) {
