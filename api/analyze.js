@@ -125,7 +125,9 @@ export default async function handler(req, res) {
     }
 
     const data  = await response.json()
-    const text  = data.content?.[0]?.text ?? ''
+    const raw   = data.content?.[0]?.text ?? ''
+    // Strip markdown code fences Claude sometimes adds despite being told not to
+    const text  = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
     const analysis = JSON.parse(text)
     return res.status(200).json(analysis)
 
